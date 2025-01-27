@@ -1,0 +1,133 @@
+import os
+
+# User class to represent user accounts
+class User:
+    def __init__(self, username, password, balance=0.0):
+        self.username = username
+        self.password = password
+        self.balance = balance
+    
+    def deposit(self, amount):
+        self.balance += amount
+        print(f"${amount} deposited. Current balance: ${self.balance}")
+    
+    def withdraw(self, amount):
+        if amount > self.balance:
+            print("Insufficient funds!")
+        else:
+            self.balance -= amount
+            print(f"${amount} withdrawn. Current balance: ${self.balance}")
+    
+    def transfer(self, amount, receiver):
+        if amount > self.balance:
+            print("Insufficient funds!")
+        else:
+            self.balance -= amount
+            receiver.balance += amount
+            print(f"${amount} transferred. Your current balance: ${self.balance}")
+
+# File handling for storing user data
+class BankSystem:
+    def __init__(self):
+        self.users = {}
+        self.load_data()
+
+    def save_data(self):
+        with open("users.txt", "w") as file:
+            for username, user in self.users.items():
+                file.write(f"{username},{user.password},{user.balance}\n")
+    
+    def load_data(self):
+        if os.path.exists("users.txt"):
+            with open("users.txt", "r") as file:
+                for line in file.readlines():
+                    username, password, balance = line.strip().split(',')
+                    self.users[username] = User(username, password, float(balance))
+    
+    def register_user(self, username, password):
+        if username in self.users:
+            print("Username already exists. Please choose another.")
+        else:
+            user = User(username, password)
+            self.users[username] = user
+            self.save_data()
+            print("User registered successfully!")
+    
+    def login(self, username, password):
+        if username in self.users and self.users[username].password == password:
+            return self.users[username]
+        else:
+            print("Invalid username or password!")
+            return None
+
+# Main menu function
+def main_menu(bank_system, logged_in_user):
+    while True:
+        print("\n--- Online Banking System ---")
+        print("1. Check Balance")
+        print("2. Deposit")
+        print("3. Withdraw")
+        print("4. Transfer Money")
+        print("5. Logout")
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            print(f"Your balance is: ${logged_in_user.balance}")
+        
+        elif choice == "2":
+            amount = float(input("Enter deposit amount: $"))
+            logged_in_user.deposit(amount)
+            bank_system.save_data()
+        
+        elif choice == "3":
+            amount = float(input("Enter withdraw amount: $"))
+            logged_in_user.withdraw(amount)
+            bank_system.save_data()
+        
+        elif choice == "4":
+            receiver_username = input("Enter receiver username: ")
+            if receiver_username in bank_system.users:
+                amount = float(input("Enter transfer amount: $"))
+                receiver = bank_system.users[receiver_username]
+                logged_in_user.transfer(amount, receiver)
+                bank_system.save_data()
+            else:
+                print("Receiver not found.")
+        
+        elif choice == "5":
+            print("Logging out...")
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+# Function to handle the registration and login process
+def user_authentication(bank_system):
+    while True:
+        print("\n--- Welcome to the Online Banking System ---")
+        print("1. Register")
+        print("2. Login")
+        print("3. Exit")
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            bank_system.register_user(username, password)
+        
+        elif choice == "2":
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            logged_in_user = bank_system.login(username, password)
+            if logged_in_user:
+                main_menu(bank_system, logged_in_user)
+        
+        elif choice == "3":
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+# Main execution
+if __name__ == "__main__":
+    bank_system = BankSystem()
+    user_authentication(bank_system)
